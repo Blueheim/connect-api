@@ -1,35 +1,68 @@
-import mongoose from 'mongoose';
-import Joi from 'joi';
-import _ from 'lodash';
-import bcrypt from 'bcryptjs';
-import config from 'config';
-import jwt from 'jsonwebtoken';
+const mongoose = require('mongoose');
+const Joi = require('joi');
+const _ = require('lodash');
+const bcrypt = require('bcryptjs');
+const config = require('config');
+const jwt = require('jsonwebtoken');
 
 // ----------------------   CONFIG  --------------------------------
 const collectionName = 'User';
 
 // ----------------------   SCHEMA DEFINITION --------------------------------
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    minlength: 5,
-    maxlength: 50,
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: false,
+      minlength: 5,
+      maxlength: 50,
+    },
+    email: {
+      type: String,
+      required: false,
+      minlength: 5,
+      maxlength: 255,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: false,
+      minlength: 5,
+      maxlength: 1024,
+    },
+    authToken: {
+      type: String,
+      required: false,
+      minlength: 5,
+      maxlength: 1024,
+    },
+    google: {
+      id: {
+        type: String,
+        required: false,
+      },
+      name: String,
+      email: {
+        type: String,
+        required: false,
+      },
+    },
+    facebook: {
+      id: {
+        type: String,
+        required: false,
+      },
+      name: String,
+      email: {
+        type: String,
+        required: false,
+      },
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    minlength: 5,
-    maxlength: 255,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    minlength: 5,
-    maxlength: 1024,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 // ----------------------   STATICS --------------------------------
 
@@ -41,20 +74,41 @@ userSchema.statics.dbGetAll = async function() {
     .exec();
 };
 
-userSchema.statics.dbGet = async function(id) {
+userSchema.statics.dbGetById = async function(id) {
   return this.findById(id).exec();
 };
 
-userSchema.statics.dbExist = async function(email) {
-  return this.findOne({ email });
+userSchema.statics.dbGetByEmail = async function(email) {
+  return this.findOne({ email: email }).exec();
 };
 
-userSchema.statics.dbCreate = async function(user) {
-  const document = new this(_.pick(user, ['name', 'email', 'password']));
-  const salt = await bcrypt.genSalt(10);
-  document.password = await bcrypt.hash(document.password, salt);
+userSchema.statics.dbCreate = async function(user, strategy, authPayload = {}) {
+  switch (strategy) {
+    case 'local':
+      const document = new this(_.pick(user, ['name', 'email', 'password']));
+      const salt = await bcrypt.genSalt(10);
+      document.password = await bcrypt.hash(document.password, salt);
+      //return _.pick(await document.save(), ['_id', 'name', 'email']);
+      return document.save();
+      break;
+    case 'google':
+    case 'facebook':
+      if (!authPayload) {
+        throw new Error(`Profile ${strategy} missing`);
+      } else {
+        const authObject = _.pick(authPayload, ['id', 'name', 'email']);
+        const document = new this({ [`${strategy}`]: authObject });
+        //return _.pick(await document.save(), ['_id', [`${strategy}`].name, [`${strategy}`].email]);
+        return document.save();
+      }
+      break;
+    default:
+      throw new Error(`Strategy ${strategy} unknown`);
+  }
+};
 
-  return _.pick(await document.save(), ['_id', 'name', 'email']);
+userSchema.statics.comparePassword = async function(candidatePassword, hash) {
+  return bcrypt.compare(candidatePassword, hash);
 };
 
 // ----------------------  METHODS -----------------------------
@@ -62,12 +116,21 @@ userSchema.statics.dbCreate = async function(user) {
 userSchema.methods.generateAuthToken = function() {
   const token = jwt.sign(
     {
-      _id: this._id,
-      isAdmin: this.isAdmin,
+      // _id: this._id,
+      // isAdmin: this.isAdmin,
     },
-    config.get('jwtPrivateKey')
+    config.get('JWT_SECRET_KEY')
   );
   return token;
+};
+
+userSchema.methods.dbSetAuthToken = async function(token) {
+  if (!token) {
+    throw new Error('Token missing');
+  } else {
+    this.authToken = token;
+  }
+  return this.save();
 };
 
 // ----------------------   MODEL CREATION --------------------------------
@@ -94,4 +157,5 @@ function validate(user) {
   return Joi.validate(user, schema);
 }
 
-export { User as model, validate };
+exports.model = User;
+exports.validate = validate;

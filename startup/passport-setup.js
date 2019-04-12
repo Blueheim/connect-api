@@ -1,7 +1,10 @@
+const config = require('config');
 const passport = require('passport');
+const { model: User } = require('../models/user');
 const LocalStrategy = require('passport-local');
 const BearerStrategy = require('passport-http-bearer').Strategy;
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
 
 module.exports = function(app) {
   app.use(passport.initialize());
@@ -41,31 +44,29 @@ module.exports = function(app) {
       {
         usernameField: 'email',
         passwordField: 'password',
+        session: false,
       },
       (email, password, done) => {
-        User.findOne({ email: email }, (err, user) => {
-          if (err) {
-            return done(err);
-          }
-          if (!user) {
-            return done(null, false, { message: 'Incorrect email.' });
-          }
+        User.dbGetByEmail(email)
+          .then(async user => {
+            if (!user) {
+              return done(null, false, { message: 'Invalid email.' });
+            }
 
-          bcrypt.compare(password, user.password, function(err, res) {
-            if (!res)
+            const isValidPassword = await User.comparePassword(password, user.password);
+            if (!isValidPassword) {
               return done(null, false, {
                 message: 'Invalid Password',
               });
-            var returnUser = {
-              username: user.username,
-              createdAt: user.createdAt,
-              id: user.id,
-            };
-            return done(null, returnUser, {
-              message: 'Logged In Successfully',
+            }
+
+            return done(null, user, {
+              message: 'User granted',
             });
+          })
+          .catch(err => {
+            return done(err);
           });
-        });
       }
     )
   );
@@ -103,3 +104,17 @@ module.exports = function(app) {
     )
   );
 };
+
+// Passport facebook strategy
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: config.get('FB_APP_ID'),
+      clientSecret: config.get('FB_SECRET_KEY'),
+      callbackURL: config.get('FB_CALLBACK_URL'),
+    },
+    function(accessToken, refreshToken, profile, cb) {
+      cb(null, profile);
+    }
+  )
+);

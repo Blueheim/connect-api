@@ -1,5 +1,6 @@
-import express from 'express';
-import { model, validate } from '../models/user';
+const express = require('express');
+const _ = require('lodash');
+const { model, validate } = require('../models/user');
 
 const router = express.Router();
 
@@ -21,13 +22,20 @@ router.post('/', async (req, res) => {
     return res.status(400).send(error.details[0].message);
   }
 
-  if (await model.dbExist(req.body.email)) {
+  if (await model.dbGetByEmail(req.body.email)) {
     return res.status(400).send('User already registered');
   }
 
-  const user = await model.dbCreate(req.body);
+  const user = await model.dbCreate(req.body, 'local');
 
-  res.send(user);
+  const token = user.generateAuthToken();
+
+  const authUser = await user.dbSetAuthToken(token);
+
+  const resUser = _.pick(authUser, ['_id', 'name', 'email']);
+
+  res.header('x-auth-token', token);
+  res.send(resUser);
 });
 
-export default router;
+module.exports = router;

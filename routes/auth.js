@@ -6,8 +6,13 @@ const passport = require('passport');
 
 // POST /
 // Local authentication
-router.post('/', passport.authenticate('local', { failureRedirect: '/auth/local', session: false }), (req, res) => {
-  res.redirect('/');
+router.post('/', passport.authenticate('local', { session: false }), async (req, res) => {
+  //res.redirect('/');
+  console.log(req);
+  const token = req.user.generateAuthToken();
+  const authUser = await req.user.dbSetAuthToken(token);
+
+  res.send(token);
 });
 
 // GOOGLE
@@ -29,6 +34,18 @@ router.get(
 router.get(
   config.get('GG_OAUTH2_CALLBACK_URL'),
   passport.authenticate('google', { failureRedirect: '/auth/local', session: false }),
+  (req, res) => {
+    //console.log(req.user);
+    res.redirect('/');
+  }
+);
+
+// FACEBOOK
+router.get('/facebook', passport.authenticate('facebook'));
+
+router.get(
+  config.get('FB_CALLBACK_URL'),
+  passport.authenticate('facebook', { failureRedirect: '/auth/local', session: false }),
   (req, res) => {
     //console.log(req.user);
     res.redirect('/');
