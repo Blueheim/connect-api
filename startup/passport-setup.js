@@ -72,6 +72,37 @@ module.exports = function(app) {
   );
 
   // oauth strategies
+  const registerAuthUser = (strategy, token, profile, cb) => {
+    const strategyKeyId = `${strategy}.id`;
+
+    User.dbGetByOAuthId(strategyKeyId, profile.id)
+      .then(async user => {
+        if (!user) {
+          //creates a user with the access token given by oauth service
+          const newUser = {
+            authToken: token,
+            [strategy]: {
+              id: profile.id,
+              name: profile.displayName,
+            },
+          };
+
+          if (typeof profile.emails != 'undefined' && profile.emails.length > 0) {
+            newUser[strategy].email = profile.emails[0].value;
+          }
+          await User.dbCreate(newUser, strategy);
+        } else {
+          //user exist
+          await user.dbSetAuthToken(token);
+        }
+
+        // invoke cb with a user object set at req.user in route handlers after authentication
+        return cb(null, user);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  };
 
   // Passport google strategy
   passport.use(
@@ -82,39 +113,23 @@ module.exports = function(app) {
         callbackURL: config.get('GG_OAUTH2_CALLBACK_URL'),
       },
       (accessToken, refreshToken, profile, cb) => {
-        console.log(profile);
-        // User.findOne({authID: profile.id}, (err, user) => { // find the user
-        //   if (!user) {
-        //     //creates a user with the access token given by google
-        //     User.create({
-        //       authToken: accessToken,
-        //       authID: profile.id,
-        //       name: profile.displayName
-        //     }, (err, user) => {
-        //       return cb(err, user);
-        //     })
-        //   }
+        registerAuthUser('google', accessToken, profile, cb);
+      }
+    )
+  );
 
-        //   return cb(err, user);
-        // })
-
-        // invoke cb with a user object set at req.user in route handlers after authentication
-        cb(null, profile);
+  // Passport facebook strategy
+  passport.use(
+    new FacebookStrategy(
+      {
+        clientID: config.get('FB_APP_ID'),
+        clientSecret: config.get('FB_SECRET_KEY'),
+        callbackURL: config.get('FB_OAUTH_CALLBACK_URL'),
+        profileFields: ['displayName', 'emails'],
+      },
+      (accessToken, refreshToken, profile, cb) => {
+        registerAuthUser('facebook', accessToken, profile, cb);
       }
     )
   );
 };
-
-// Passport facebook strategy
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: config.get('FB_APP_ID'),
-      clientSecret: config.get('FB_SECRET_KEY'),
-      callbackURL: config.get('FB_CALLBACK_URL'),
-    },
-    function(accessToken, refreshToken, profile, cb) {
-      cb(null, profile);
-    }
-  )
-);

@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema(
       required: false,
       minlength: 5,
       maxlength: 255,
-      unique: true,
     },
     password: {
       type: String,
@@ -78,14 +77,20 @@ userSchema.statics.dbGetById = async function(id) {
   return this.findById(id).exec();
 };
 
+userSchema.statics.dbGetByOAuthId = async function(strategyKeyId, profileId) {
+  // onsole.log(strategyKeyId, profileId);
+  return this.findOne({ [strategyKeyId]: profileId }).exec();
+};
+
 userSchema.statics.dbGetByEmail = async function(email) {
   return this.findOne({ email: email }).exec();
 };
 
-userSchema.statics.dbCreate = async function(user, strategy, authPayload = {}) {
+userSchema.statics.dbCreate = async function(user, strategy) {
+  let document;
   switch (strategy) {
     case 'local':
-      const document = new this(_.pick(user, ['name', 'email', 'password']));
+      document = new this(_.pick(user, ['name', 'email', 'password']));
       const salt = await bcrypt.genSalt(10);
       document.password = await bcrypt.hash(document.password, salt);
       //return _.pick(await document.save(), ['_id', 'name', 'email']);
@@ -93,14 +98,9 @@ userSchema.statics.dbCreate = async function(user, strategy, authPayload = {}) {
       break;
     case 'google':
     case 'facebook':
-      if (!authPayload) {
-        throw new Error(`Profile ${strategy} missing`);
-      } else {
-        const authObject = _.pick(authPayload, ['id', 'name', 'email']);
-        const document = new this({ [`${strategy}`]: authObject });
-        //return _.pick(await document.save(), ['_id', [`${strategy}`].name, [`${strategy}`].email]);
-        return document.save();
-      }
+      document = new this(user);
+      //return _.pick(await document.save(), ['_id', [`${strategy}`].name, [`${strategy}`].email]);
+      return document.save();
       break;
     default:
       throw new Error(`Strategy ${strategy} unknown`);

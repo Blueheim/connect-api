@@ -32,23 +32,26 @@ router.get(
 // Authenticate the request
 // If authentication fails, the user will be redirected to the specified url
 router.get(
-  config.get('GG_OAUTH2_CALLBACK_URL'),
-  passport.authenticate('google', { failureRedirect: '/auth/local', session: false }),
+  config.get('GG_ROUTER_CALLBACK_URL'),
+  passport.authenticate('google', { failureRedirect: '/api/auth', session: false }),
   (req, res) => {
-    //console.log(req.user);
-    res.redirect('/');
+    res.send(req.user);
   }
 );
 
 // FACEBOOK
-router.get('/facebook', passport.authenticate('facebook'));
+router.get(
+  '/facebook',
+  passport.authenticate('facebook', {
+    scope: ['email'],
+  })
+);
 
 router.get(
-  config.get('FB_CALLBACK_URL'),
-  passport.authenticate('facebook', { failureRedirect: '/auth/local', session: false }),
+  config.get('FB_ROUTER_CALLBACK_URL'),
+  passport.authenticate('facebook', { failureRedirect: '/api/auth', session: false }),
   (req, res) => {
-    //console.log(req.user);
-    res.redirect('/');
+    res.send(req.user);
   }
 );
 
