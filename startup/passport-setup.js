@@ -72,36 +72,33 @@ module.exports = function(app) {
   );
 
   // oauth strategies
-  const registerAuthUser = (strategy, token, profile, cb) => {
+  const registerAuthUser = async (strategy, token, profile) => {
     const strategyKeyId = `${strategy}.id`;
 
-    User.dbGetByOAuthId(strategyKeyId, profile.id)
-      .then(async user => {
-        if (!user) {
-          //creates a user with the access token given by oauth service
-          const newUser = {
-            authToken: token,
-            [strategy]: {
-              id: profile.id,
-              name: profile.displayName,
-            },
-          };
+    const user = await User.dbGetByOAuthId(strategyKeyId, profile.id);
 
-          if (typeof profile.emails != 'undefined' && profile.emails.length > 0) {
-            newUser[strategy].email = profile.emails[0].value;
-          }
-          await User.dbCreate(newUser, strategy);
-        } else {
-          //user exist
-          await user.dbSetAuthToken(token);
-        }
+    if (!user) {
+      //creates a user with the access token given by oauth service
+      const newUser = {
+        authToken: token,
+        [strategy]: {
+          id: profile.id,
+          name: profile.displayName,
+        },
+      };
 
-        // invoke cb with a user object set at req.user in route handlers after authentication
-        return cb(null, user);
-      })
-      .catch(err => {
-        return cb(err);
-      });
+      if (typeof profile.emails != 'undefined' && profile.emails.length > 0) {
+        newUser[strategy].email = profile.emails[0].value;
+      }
+      await User.dbCreate(newUser, strategy);
+      return newUser;
+    } else {
+      //user exist
+      await user.dbSetAuthToken(token);
+      return user;
+    }
+
+    // invoke cb with a user object set at req.user in route handlers after authentication
   };
 
   // Passport google strategy
@@ -112,8 +109,15 @@ module.exports = function(app) {
         clientSecret: config.get('GG_OAUTH2_CLIENT_SECRET'),
         callbackURL: config.get('GG_OAUTH2_CALLBACK_URL'),
       },
-      (accessToken, refreshToken, profile, cb) => {
-        registerAuthUser('google', accessToken, profile, cb);
+      async (accessToken, refreshToken, profile, cb) => {
+        try {
+          const user = await registerAuthUser('google', accessToken, profile);
+          if (user) {
+            cb(null, user);
+          }
+        } catch (err) {
+          cb(err);
+        }
       }
     )
   );
@@ -127,8 +131,15 @@ module.exports = function(app) {
         callbackURL: config.get('FB_OAUTH_CALLBACK_URL'),
         profileFields: ['displayName', 'emails'],
       },
-      (accessToken, refreshToken, profile, cb) => {
-        registerAuthUser('facebook', accessToken, profile, cb);
+      async (accessToken, refreshToken, profile, cb) => {
+        try {
+          const user = await registerAuthUser('facebook', accessToken, profile);
+          if (user) {
+            cb(null, user);
+          }
+        } catch (err) {
+          cb(err);
+        }
       }
     )
   );

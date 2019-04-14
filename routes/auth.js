@@ -31,13 +31,9 @@ router.get(
 // GET callbackURL
 // Authenticate the request
 // If authentication fails, the user will be redirected to the specified url
-router.get(
-  config.get('GG_ROUTER_CALLBACK_URL'),
-  passport.authenticate('google', { failureRedirect: '/api/auth', session: false }),
-  (req, res) => {
-    res.send(req.user);
-  }
-);
+router.get(config.get('GG_ROUTER_CALLBACK_URL'), passport.authenticate('google', { session: false }), (req, res) => {
+  res.send(req.user);
+});
 
 // FACEBOOK
 router.get(
