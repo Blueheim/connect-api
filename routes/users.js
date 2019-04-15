@@ -10,10 +10,11 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  const user = await model.dbGet(req.params.id);
+  const user = await model.dbGetById(req.params.id);
   res.send(user);
 });
 
+// Sign up a new user
 router.post('/', async (req, res) => {
   const { error } = validate(req.body);
 
@@ -32,9 +33,8 @@ router.post('/', async (req, res) => {
 
   const authUser = await user.dbSetAuthToken(token);
 
-  const resUser = _.pick(authUser, ['_id', 'name', 'email']);
+  const resUser = _.pick(authUser, ['_id', 'name', 'email', 'authToken']);
 
-  res.header('x-auth-token', token);
   res.send(resUser);
 });
 
