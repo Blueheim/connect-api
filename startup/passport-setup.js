@@ -1,10 +1,10 @@
-const config = require('config');
-const passport = require('passport');
-const { model: User } = require('../models/user');
-const LocalStrategy = require('passport-local');
-const BearerStrategy = require('passport-http-bearer').Strategy;
-const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-const FacebookStrategy = require('passport-facebook').Strategy;
+const config = require("config");
+const passport = require("passport");
+const { model: User } = require("../models/user");
+const LocalStrategy = require("passport-local");
+const BearerStrategy = require("passport-http-bearer").Strategy;
+const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
+const FacebookStrategy = require("passport-facebook").Strategy;
 
 module.exports = function(app) {
   app.use(passport.initialize());
@@ -32,7 +32,7 @@ module.exports = function(app) {
           return done(null, false);
         }
 
-        return done(null, user, { scope: 'read' });
+        return done(null, user, { scope: "read" });
       });
     })
   );
@@ -42,26 +42,29 @@ module.exports = function(app) {
   passport.use(
     new LocalStrategy(
       {
-        usernameField: 'email',
-        passwordField: 'password',
-        session: false,
+        usernameField: "email",
+        passwordField: "password",
+        session: false
       },
       (email, password, done) => {
         User.dbGetByEmail(email)
           .then(async user => {
             if (!user) {
-              return done(null, false, { message: 'Invalid email.' });
+              return done(null, false, { message: "Invalid email." });
             }
 
-            const isValidPassword = await User.comparePassword(password, user.password);
+            const isValidPassword = await User.comparePassword(
+              password,
+              user.password
+            );
             if (!isValidPassword) {
               return done(null, false, {
-                message: 'Invalid Password',
+                message: "Invalid Password"
               });
             }
 
             return done(null, user, {
-              message: 'User granted',
+              message: "User granted"
             });
           })
           .catch(err => {
@@ -83,11 +86,11 @@ module.exports = function(app) {
         authToken: token,
         [strategy]: {
           id: profile.id,
-          name: profile.displayName,
-        },
+          name: profile.displayName
+        }
       };
 
-      if (typeof profile.emails != 'undefined' && profile.emails.length > 0) {
+      if (typeof profile.emails != "undefined" && profile.emails.length > 0) {
         newUser[strategy].email = profile.emails[0].value;
       }
       await User.dbCreate(newUser, strategy);
@@ -105,13 +108,13 @@ module.exports = function(app) {
   passport.use(
     new GoogleStrategy(
       {
-        clientID: config.get('GG_OAUTH2_CLIENT_ID'),
-        clientSecret: config.get('GG_OAUTH2_CLIENT_SECRET'),
-        callbackURL: config.get('GG_OAUTH2_CALLBACK_URL'),
+        clientID: config.get("GG_OAUTH2_CLIENT_ID"),
+        clientSecret: config.get("GG_OAUTH2_CLIENT_SECRET"),
+        callbackURL: config.get("GG_OAUTH2_CALLBACK_URL")
       },
       async (accessToken, refreshToken, profile, cb) => {
         try {
-          const user = await registerAuthUser('google', accessToken, profile);
+          const user = await registerAuthUser("google", accessToken, profile);
           if (user) {
             cb(null, user);
           }
@@ -126,14 +129,14 @@ module.exports = function(app) {
   passport.use(
     new FacebookStrategy(
       {
-        clientID: config.get('FB_APP_ID'),
-        clientSecret: config.get('FB_SECRET_KEY'),
-        callbackURL: config.get('FB_OAUTH_CALLBACK_URL'),
-        profileFields: ['displayName', 'emails'],
+        clientID: config.get("FB_APP_ID"),
+        clientSecret: config.get("FB_SECRET_KEY"),
+        callbackURL: config.get("FB_OAUTH_CALLBACK_URL"),
+        profileFields: ["displayName", "emails"]
       },
       async (accessToken, refreshToken, profile, cb) => {
         try {
-          const user = await registerAuthUser('facebook', accessToken, profile);
+          const user = await registerAuthUser("facebook", accessToken, profile);
           if (user) {
             cb(null, user);
           }

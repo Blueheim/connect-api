@@ -1,12 +1,12 @@
-const mongoose = require('mongoose');
-const Joi = require('joi');
-const _ = require('lodash');
-const bcrypt = require('bcryptjs');
-const config = require('config');
-const jwt = require('jsonwebtoken');
+const mongoose = require("mongoose");
+const Joi = require("joi");
+const _ = require("lodash");
+const bcrypt = require("bcryptjs");
+const config = require("config");
+const jwt = require("jsonwebtoken");
 
 // ----------------------   CONFIG  --------------------------------
-const collectionName = 'User';
+const collectionName = "User";
 
 // ----------------------   SCHEMA DEFINITION --------------------------------
 const userSchema = new mongoose.Schema(
@@ -15,51 +15,51 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: false,
       minlength: 5,
-      maxlength: 50,
+      maxlength: 50
     },
     email: {
       type: String,
       required: false,
       minlength: 5,
-      maxlength: 255,
+      maxlength: 255
     },
     password: {
       type: String,
       required: false,
       minlength: 5,
-      maxlength: 1024,
+      maxlength: 1024
     },
     authToken: {
       type: String,
       required: false,
       minlength: 5,
-      maxlength: 1024,
+      maxlength: 1024
     },
     google: {
       id: {
         type: String,
-        required: false,
+        required: false
       },
       name: String,
       email: {
         type: String,
-        required: false,
-      },
+        required: false
+      }
     },
     facebook: {
       id: {
         type: String,
-        required: false,
+        required: false
       },
       name: String,
       email: {
         type: String,
-        required: false,
-      },
-    },
+        required: false
+      }
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.statics.dbGetAll = async function() {
   return this.find()
-    .sort('name')
+    .sort("name")
     .exec();
 };
 
@@ -89,15 +89,15 @@ userSchema.statics.dbGetByEmail = async function(email) {
 userSchema.statics.dbCreate = async function(user, strategy) {
   let document;
   switch (strategy) {
-    case 'local':
-      document = new this(_.pick(user, ['name', 'email', 'password']));
+    case "local":
+      document = new this(_.pick(user, ["name", "email", "password"]));
       const salt = await bcrypt.genSalt(10);
       document.password = await bcrypt.hash(document.password, salt);
       //return _.pick(await document.save(), ['_id', 'name', 'email']);
       return document.save();
       break;
-    case 'google':
-    case 'facebook':
+    case "google":
+    case "facebook":
       document = new this(user);
       //return _.pick(await document.save(), ['_id', [`${strategy}`].name, [`${strategy}`].email]);
       return document.save();
@@ -119,14 +119,14 @@ userSchema.methods.generateAuthToken = function() {
       // _id: this._id,
       // isAdmin: this.isAdmin,
     },
-    config.get('JWT_SECRET_KEY')
+    config.get("JWT_SECRET_KEY")
   );
   return token;
 };
 
 userSchema.methods.dbSetAuthToken = async function(token) {
   if (!token) {
-    throw new Error('Token missing');
+    throw new Error("Token missing");
   } else {
     this.authToken = token;
   }
@@ -151,7 +151,7 @@ function validate(user) {
     password: Joi.string()
       .min(5)
       .max(255)
-      .required(),
+      .required()
   };
 
   return Joi.validate(user, schema);

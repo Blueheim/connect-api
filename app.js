@@ -1,16 +1,16 @@
-require('express-async-errors');
-const config = require('config');
-const ErrorHandler = require('./lib/ErrorHandler');
-const express = require('express');
-const db = require('./startup/db');
-const routes = require('./startup/routes');
-const passportSetup = require('./startup/passport-setup');
-const errorMiddleware = require('./middleware/error');
+require("express-async-errors");
+const config = require("config");
+const ErrorHandler = require("./lib/ErrorHandler");
+const express = require("express");
+const db = require("./startup/db");
+const routes = require("./startup/routes");
+const passportSetup = require("./startup/passport-setup");
+const errorMiddleware = require("./middleware/error");
 
-const logger = require('./lib/logger')();
+const logger = require("./lib/logger")();
 const errorHandler = new ErrorHandler(logger);
 
-require('./startup/reboot-handling')(errorHandler);
+require("./startup/reboot-handling")(errorHandler);
 
 db();
 
