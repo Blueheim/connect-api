@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const config = require('config');
+const mongoose = require("mongoose");
+const config = require("config");
 
-const db = config.get('DB');
+const db = config.get("DB");
 module.exports = () => {
   mongoose
     .connect(db)

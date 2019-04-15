@@ -1,6 +1,9 @@
 const express = require("express");
+const AppError = require("../lib/AppError");
 const _ = require("lodash");
 const { model, validate } = require("../models/user");
+
+const validateRequestBody = require("../middleware/validateRequestBody");
 
 const router = express.Router();
 
@@ -15,16 +18,14 @@ router.get("/:id", async (req, res) => {
 });
 
 // Sign up a new user
-router.post("/", async (req, res) => {
-  const { error } = validate(req.body);
-
-  if (error) {
-    // 400 Bad request
-    return res.status(400).send(error.details[0].message);
-  }
-
+router.post("/", validateRequestBody(validate), async (req, res) => {
   if (await model.dbGetByEmail(req.body.email)) {
-    return res.status(400).send("User already registered");
+    throw new AppError(
+      "RECORD_EXISTS",
+      "User already exists in the database",
+      true,
+      response => response.status(400).send("User already registered")
+    );
   }
 
   const user = await model.dbCreate(req.body, "local");

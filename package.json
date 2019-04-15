@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test": "jest --watchAll --verbose",
     "start": "node bin/www/server.js",
     "dev": "nodemon bin/www/server.js"
   },
