@@ -1,22 +1,19 @@
 const config = require("config");
 const express = require("express");
 const router = express.Router();
-
 const passport = require("passport");
+const {
+  authenticateLocal,
+  authenticateGoogle,
+  authenticateFacebook
+} = require("./authController");
 
 // POST /
 // Local authentication
 router.post(
   "/",
   passport.authenticate("local", { session: false }),
-  async (req, res) => {
-    //res.redirect('/');
-    console.log(req);
-    const token = req.user.generateAuthToken();
-    const authUser = await req.user.dbSetAuthToken(token);
-
-    res.send(token);
-  }
+  authenticateLocal
 );
 
 // GOOGLEs
@@ -38,9 +35,7 @@ router.get(
 router.get(
   config.get("GG_ROUTER_CALLBACK_URL"),
   passport.authenticate("google", { session: false }),
-  (req, res) => {
-    res.send(req.user);
-  }
+  authenticateGoogle
 );
 
 // FACEBOOK
@@ -57,9 +52,7 @@ router.get(
     failureRedirect: "/api/auth",
     session: false
   }),
-  (req, res) => {
-    res.send(req.user);
-  }
+  authenticateFacebook
 );
 
 module.exports = router;

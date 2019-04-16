@@ -3,7 +3,7 @@ const config = require("config");
 const ErrorHandler = require("./lib/ErrorHandler");
 const express = require("express");
 const db = require("./startup/db");
-const routes = require("./startup/routes");
+const api = require("./startup/api");
 const passportSetup = require("./startup/passport-setup");
 const errorMiddleware = require("./middleware/error");
 
@@ -16,7 +16,7 @@ db();
 
 const app = express();
 passportSetup(app);
-routes(app);
+api(app);
 
 //Error handling middleware
 app.use(errorMiddleware(errorHandler));

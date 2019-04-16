@@ -1,6 +1,6 @@
 const express = require("express");
-const users = require("../routes/users");
-const auth = require("../routes/auth");
+const users = require("../users/usersAPI");
+const auth = require("../auth/authAPI");
 
 module.exports = function(app) {
   app.use(express.json());

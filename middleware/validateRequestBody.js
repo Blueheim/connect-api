@@ -6,12 +6,13 @@ module.exports = validator => {
 
     if (error) {
       //400 Bad request
-      throw new AppError(
-        "SCHEMA_INVALID",
-        "Schema object is not valid",
-        true,
-        response => response.status(400).send(error.details[0].message)
-      );
+      throw new AppError({
+        name: "SCHEMA_INVALID",
+        description: "Schema object is not valid",
+        httpStatusCode: 400,
+        message: error.details[0].message,
+        isOperational: true
+      });
     }
     next();
   };

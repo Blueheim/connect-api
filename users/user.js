@@ -144,10 +144,10 @@ function validate(user) {
       .max(50)
       .required(),
     email: Joi.string()
+      .email({ minDomainAtoms: 2 })
       .min(5)
       .max(255)
-      .required()
-      .email(),
+      .required(),
     password: Joi.string()
       .min(5)
       .max(255)
