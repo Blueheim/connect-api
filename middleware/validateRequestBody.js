@@ -1,4 +1,4 @@
-const AppError = require("../lib/AppError");
+const { AppError } = require("@blueheim/node-utils");
 
 module.exports = validator => {
   return (req, res, next) => {

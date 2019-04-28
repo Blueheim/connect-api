@@ -11,12 +11,6 @@ const collectionName = "User";
 // ----------------------   SCHEMA DEFINITION --------------------------------
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: false,
-      minlength: 5,
-      maxlength: 50
-    },
     email: {
       type: String,
       required: false,
@@ -68,9 +62,7 @@ const userSchema = new mongoose.Schema(
 // Crud operations
 
 userSchema.statics.dbGetAll = async function() {
-  return this.find()
-    .sort("name")
-    .exec();
+  return this.find().exec();
 };
 
 userSchema.statics.dbGetById = async function(id) {
@@ -90,7 +82,7 @@ userSchema.statics.dbCreate = async function(user, strategy) {
   let document;
   switch (strategy) {
     case "local":
-      document = new this(_.pick(user, ["name", "email", "password"]));
+      document = new this(_.pick(user, ["email", "password"]));
       const salt = await bcrypt.genSalt(10);
       document.password = await bcrypt.hash(document.password, salt);
       //return _.pick(await document.save(), ['_id', 'name', 'email']);
@@ -139,10 +131,6 @@ const User = mongoose.model(collectionName, userSchema);
 // ----------------------   VALIDATION --------------------------------
 function validate(user) {
   const schema = {
-    name: Joi.string()
-      .min(5)
-      .max(50)
-      .required(),
     email: Joi.string()
       .email({ minDomainAtoms: 2 })
       .min(5)

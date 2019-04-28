@@ -1,4 +1,4 @@
-const AppError = require("../lib/AppError");
+const { AppError } = require("@blueheim/node-utils");
 const _ = require("lodash");
 const { model } = require("./user");
 
@@ -29,7 +29,7 @@ exports.createUser = async (req, res) => {
 
   const authUser = await user.dbSetAuthToken(token);
 
-  const resUser = _.pick(authUser, ["_id", "name", "email", "authToken"]);
+  const result = _.pick(authUser, ["_id", "authToken"]);
 
-  res.status(201).json(resUser);
+  res.status(201).json(result);
 };

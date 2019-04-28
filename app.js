@@ -1,6 +1,6 @@
 require("express-async-errors");
 const config = require("config");
-const ErrorHandler = require("./lib/ErrorHandler");
+const { ErrorHandler } = require("@blueheim/node-utils");
 const express = require("express");
 const db = require("./startup/db");
 const api = require("./startup/api");

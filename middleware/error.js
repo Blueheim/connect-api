@@ -4,6 +4,7 @@ module.exports = errorHandler => (err, req, res, next) => {
       res.status(err.httpStatusCode).send(err.message);
     }
   } else {
+    console.log(err);
     errorHandler.handle(err, res);
     res.status(500).send("Unexpected error");
   }
